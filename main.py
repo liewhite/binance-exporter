@@ -1,5 +1,6 @@
 import json
 import sys
+import time
 from binance import Client, ThreadedWebsocketManager, ThreadedDepthCacheManager
 from config import conf
 import metrics
@@ -141,7 +142,7 @@ def update_metrics(ba: BAccount, prices):
         ba.portfolio_maint_margin(portfolio_account)
     )
     metrics.margin_status.labels(name, "debt").set(
-        ba.portfolio_um_account_debt(portfolio_um_account,prices)
+        ba.portfolio_um_account_debt(portfolio_um_account, prices)
     )
     metrics.push()
 
@@ -162,7 +163,7 @@ def update_db(positions, spot_acc, prices):
                 entry_price=float(position.get("entryPrice", 0)),
                 price=float(position.get("markPrice", 0)),
                 liq_price=float(position.get("liquidationPrice", 0)),
-                funding_rate=0, # todo
+                funding_rate=0,  # todo
                 upl=float(position.get("unRealizedProfit", 0)),
             ).save()
         for i in spot_acc["balances"]:
@@ -178,16 +179,14 @@ def update_db(positions, spot_acc, prices):
 
 
 def main():
-    ba = BAccount(conf["ak"], conf["sk"], conf["name"])
-    positions = ba.positions()
-    spot_account = ba.get_spot_account()
-    prices = ba.get_prices()
-    # for k,v in ba.get_prices().items():
-    #     print(k,v)
-    # print(ba.client.get_all_tickers())
-    # print(ba.get_spot_account())
-    update_metrics(ba, prices)
-    update_db(positions, spot_account, prices)
+    while True:
+        ba = BAccount(conf["ak"], conf["sk"], conf["name"])
+        prices = ba.get_prices()
+        update_metrics(ba, prices)
+        positions = ba.positions()
+        spot_account = ba.get_spot_account()
+        update_db(positions, spot_account, prices)
+        time.sleep(30)
 
 
 if __name__ == "__main__":
