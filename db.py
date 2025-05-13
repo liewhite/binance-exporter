@@ -13,10 +13,6 @@ class Margin(Model):
     value = FloatField()
     collateral_ratio = FloatField()
     collateral_value = FloatField()
-    # debt = FloatField()
-    # maint_margin = FloatField()
-    # available_balance = FloatField()
-    # adjusted_eq = FloatField()
 
     class Meta:
         database = db

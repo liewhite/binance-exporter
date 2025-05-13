@@ -94,6 +94,9 @@ class BAccount:
     def positions_upl(self, positions):
         return sum([float(i["unRealizedProfit"]) for i in positions])
 
+    def margin_distribution(self):
+        pass
+
 
 def update_metrics(ba: BAccount, prices):
     name = ba.name
@@ -147,11 +150,12 @@ def update_metrics(ba: BAccount, prices):
     metrics.push()
 
 
-def update_db(positions, spot_acc, prices):
+def update_db(positions, spot_acc, margin_distribution, prices):
     # 更新订单和持仓
     with db.db.atomic():
         db.Position.delete().execute()
         db.Spot.delete().execute()
+        db.Margin.delete().execute()
         for position in positions:
             amt = float(position["positionAmt"])
             side = "long" if amt > 0 else "short"
@@ -176,6 +180,20 @@ def update_db(positions, spot_acc, prices):
                     price=price,
                     value=amt * price,
                 ).save()
+        for i in margin_distribution:
+            asset = i["asset"]
+            eq = (
+                float(i["totalWalletBalance"])
+                + float(i["umUnrealizedPNL"])
+                - float(i["crossMarginInterest"])
+            )
+            db.Margin(
+                token=asset,
+                amount=eq,
+                value=eq * prices.get(asset, 0),
+                collateral_ratio=0,
+                collateral_value=0,
+            ).save()
 
 
 def main():
@@ -185,9 +203,13 @@ def main():
         update_metrics(ba, prices)
         positions = ba.positions()
         spot_account = ba.get_spot_account()
-        update_db(positions, spot_account, prices)
+        margin_distribution = ba.client.margin_v1_get_portfolio_balance()
+        update_db(positions, spot_account, margin_distribution, prices)
         time.sleep(30)
 
 
 if __name__ == "__main__":
+    # ba = BAccount(conf["ak"], conf["sk"], conf["name"])
+    # print(ba.client.get_cross_margin_collateral_ratio())
+    # print(ba.client.margin_v1_get_portfolio_balance())
     main()
