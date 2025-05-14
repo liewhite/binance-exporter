@@ -215,36 +215,41 @@ def update_db(positions, spot_acc, margin_distribution, prices, orders):
         now = time.time() * 1000
         agg_orders = {}
         for o in orders:
-            print("order", o)
             if o["time"] < now - 1000 * 60 * 60 * 24:
                 continue
             if o["status"] == "FILLED" or o["status"] == "PARTIALLY_FILLED":
-                print("valid order", o)
                 price = float(o["avgPrice"])
-                qty = (
-                    float(o["executedQty"])
-                    if o["side"] == "BUY"
-                    else -float(o["executedQty"])
-                )
-                value = price * qty
-                symbol = o["symbol"]
-                if symbol not in agg_orders:
-                    agg_orders[symbol] = {
-                        "symbol": symbol,
-                        "amount": 0,
-                        "value": 0,
-                    }
-                agg_orders[symbol]["amount"] += qty
-                agg_orders[symbol]["value"] += value
+                db.Order(
+                    symbol=o["symbol"],
+                    direction=o["side"],
+                    amount=abs(o["executedQty"]),
+                    price=price,
+                    value=abs(o["executedQty"]) * price,
+                ).save()
+        #         qty = (
+        #             float(o["executedQty"])
+        #             if o["side"] == "BUY"
+        #             else -float(o["executedQty"])
+        #         )
+        #         value = price * qty
+        #         symbol = o["symbol"]
+        #         if symbol not in agg_orders:
+        #             agg_orders[symbol] = {
+        #                 "symbol": symbol,
+        #                 "amount": 0,
+        #                 "value": 0,
+        #             }
+        #         agg_orders[symbol]["amount"] += qty
+        #         agg_orders[symbol]["value"] += value
 
-        for o in agg_orders.values():
-            db.Order(
-                symbol=o["symbol"],
-                direction="long" if o["amount"] > 0 else "short",
-                amount=abs(o["amount"]),
-                price=abs(o["value"] / o["amount"]),
-                value=abs(o["value"]),
-            ).save()
+        # for o in agg_orders.values():
+        #     db.Order(
+        #         symbol=o["symbol"],
+        #         direction="long" if o["amount"] > 0 else "short",
+        #         amount=abs(o["amount"]),
+        #         price=abs(o["value"] / o["amount"]),
+        #         value=abs(o["value"]),
+        #     ).save()
 
 
 def main():
