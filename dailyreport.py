@@ -295,4 +295,4 @@ def render_report(account_name):
 
 
 if __name__ == "__main__":
-    print(render_report("jlp"))
+    send_notify(render_report("jlp"))
