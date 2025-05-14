@@ -219,12 +219,13 @@ def update_db(positions, spot_acc, margin_distribution, prices, orders):
                 continue
             if o["status"] == "FILLED" or o["status"] == "PARTIALLY_FILLED":
                 price = float(o["avgPrice"])
+                qty = float(o["executedQty"])
                 db.Order(
                     symbol=o["symbol"],
                     direction=o["side"],
-                    amount=abs(o["executedQty"]),
+                    amount=abs(qty),
                     price=price,
-                    value=abs(o["executedQty"]) * price,
+                    value=abs(qty) * price,
                 ).save()
         #         qty = (
         #             float(o["executedQty"])
