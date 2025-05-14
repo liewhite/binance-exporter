@@ -1,4 +1,6 @@
 prometheus_client==0.21.1
+prometheus_api_client
 python-binance==1.0.28
 peewee
 pymysql
+jinja2

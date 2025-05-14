@@ -1,0 +1,101 @@
+# CEX持仓监控日报
+
+**日期**: {{ date }} | **生成时间**: {{ time }} | **监控账户**: {{ account_name }}
+
+## 📊 账户状态摘要
+
+| 指标 | 当前值 | 24h变化 | 状态 |
+|:-----|:------:|:-------:|:----:|
+| 账户总价值 | ${{ total_value }} | {{ total_value_change }}({{ total_value_change_pct | round(2) }}%) | {{ total_value_status }} |
+| 当前杠杆率 | {{ leverage }}x | {{ leverage_change }} | {{ leverage_status }} |
+| UniMMR | {{ unimmr }} | {{ unimmr_change }} | {{ unimmr_status }} |
+| 未实现盈亏 | ${{ upl }} | {{ upl_change }}({{ upl_change_pct | round(2) }}%) | {{ unrealized_pnl_status }} |
+
+> ⚠️ **风险提示**: {{ risk_alert }}
+
+---
+
+## 💰 资产汇总
+
+### 账户资产分布
+
+| 账户类型 | 资产价值 | 占比 | 24h变化 |
+|:---------|:--------:|:----:|:-------:|
+| 现货账户 | ${{ spot_value }} | {{ spot_ratio }}% | {{ spot_value_change }}({{ spot_value_change_pct }}%) |
+| 统一账户权益 | ${{ portfolio_value }} | {{ portfolio_ratio }}% | {{ portfolio_value_change }}({{ portfolio_value_change_pct }}%) |
+#### 占比 = xx / 账户总价值
+
+### 持仓方向分析
+
+| 方向 | 持仓价值 | 占比 | 24h变化 |
+|:-----|:--------:|:----:|:-------:|
+| 多头总价值 | ${{ long_value }} | {{ long_ratio }}% | {{ long_change }}({{ long_change_pct }}%) |
+| 空头总价值 | ${{ short_value }} | {{ short_ratio }}% | {{ short_change }}({{ short_change_pct }}%) |
+| 净持仓 | ${{ net_value }} | {{ net_ratio }}% | {{ net_change }}({{ net_change_pct }}%) |
+#### 占比 = OI / 统一账户权益
+---
+
+## 🔍 统一账户详情
+
+### 保证金状况
+
+| 指标 | 当前值 | 24h变化 |
+|:-----|:------:|:-------:|
+| 可用保证金 | ${{ available_margin }} | {{ available_margin_change }}({{ available_margin_change_pct }}%) |
+| 调整后权益 | ${{ adjusted_margin }} | {{ adjusted_margin_change }}({{ adjusted_margin_change_pct }}%) |
+| 维持保证金 | ${{ maint_margin }} | {{ maint_margin_change }}({{ maint_margin_change_pct }}%) |
+| 总负债 | ${{ debt_value }} | {{ debt_value_change }}({{ debt_value_change_pct }}%) |
+| 有息负债 | ${{ borrowed_value }} | {{ borrowed_value_change }}({{ borrowed_value_change_pct }}%) |
+
+### 保证金分布
+
+| 币种 | 数量 | 价值($) | 抵押率 | 抵押后价值($) | 负余额阈值 | 最大负余额 |
+|:-----|:----:|:-------:|:------:|:-------------:|:----------:|:----------:|
+{% for margin in margin_distribution %}
+| {{ margin.token }} | {{ margin.amount }} | ${{ margin.value }} | {{ margin.collateral_ratio }}% | ${{ margin.collateral_value }} | ${{ margin.negative_balance_threshold }} | ${{ margin.max_negative_balance }} |
+{% endfor %}
+
+---
+
+## ⚖️ 合约持仓明细
+
+| 币对 | 方向 | 数量 | 价值($) | 开仓价格 | 当前价格 | 资金费率 | 盈亏($) | 盈亏(%) | 清算价格 | 距清算 | 风险等级 |
+|:-----|:----:|:----:|:-------:|:--------:|:--------:|:--------:|:-------:|:-------:|:--------:|:------:|:--------:|
+{% for pos in positions %}
+| {{ pos.symbol }} | {{ pos.direction }} | {{ pos.amount }} | ${{ pos.value }} | ${{ pos.entry_price }} | ${{ pos.price }} | {{ pos.funding_rate }}% | ${{ pos.upl }} | {{ (pos.upl / pos.value * 100) | round(2) }}% | ${{ pos.liq_price }} | {{ ((pos.liq_price - pos.price) / pos.price * 100) | round(2) }}% | {{ pos.risk_level }} |
+{% endfor %}
+
+> ⚠️ **注意**: 持仓按风险等级从高到低排序，风险等级基于距清算价格的百分比
+
+## 💹 现货账户持仓
+
+| 币种 | 数量 | 价格($) | 价值($) | 24h变化(%) |
+|:-----|:----:|:-------:|:-------:|:-----------:|
+{% for spot in spot_positions %}
+| {{ spot.token }} | {{ spot.amount }} | ${{ spot.price }} | ${{ spot.value }} | {{ spot.change_pct }}% |
+{% endfor %}
+
+## 🔍 当日交易执行
+| Symbol | 方向 | 数量 | 价格($) | 价值($) |
+|:-----|:----:|:-------:|:-------:|:-----------:|
+{% for order in orders %}
+| {{ order.symbol }} | {{ order.direction }} | {{ order.amount }} | ${{ order.price }} | ${{ order.value }} |
+{% endfor %}
+
+---
+
+**备注**:
+- 风险状态说明: 🟢 安全 | 🟡 注意 | 🔴 危险
+- UniMMR < 2 为危险水平，请及时补充保证金
+- 数据来源: Binance API
+- 报告生成时间: {{ generated_timestamp }}
+
+## 风险评估
+
+| 风险等级 | 说明 | 建议操作 |
+|---------|-----|---------|
+| 🟢 低风险 | >清算线100%以上 | 正常监控 |
+| 🟡 中等风险 | 清算线（30%-60%） | 准备额外保证金 |
+| 🔴 高风险 | 清算线（<30%） | 立即追加保证金或减仓 |
+
+**当前风险评级：** {{ risk_rating }}

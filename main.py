@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import sys
 import time
@@ -61,11 +62,22 @@ class BAccount:
     def portfolio_um_account(self):
         return self.client.papi_get_um_account_v2()
 
-    def portfolio_um_account_debt(self, acc, prices):
+    def portfolio_account_debt(self, acc, prices):
         debt = 0
-        for i in acc["assets"]:
-            if float(i["crossWalletBalance"]) < 0:
-                debt += float(i["crossWalletBalance"]) * prices.get(i["asset"], 0)
+        for i in acc:
+            debt += (
+                float(i["negativeBalance"]) + float(i["crossMarginInterest"])
+            ) * prices.get(i["asset"], 0)
+        return debt
+
+    def portfolio_borrowed(self, acc, prices):
+        """
+        有息负债
+        """
+        debt = 0
+        for i in acc:
+            if float(i["crossMarginBorrowed"]) != 0:
+                debt += float(i["crossMarginBorrowed"]) * prices.get(i["asset"], 0)
         return debt
 
     def positions(self):
@@ -93,9 +105,6 @@ class BAccount:
 
     def positions_upl(self, positions):
         return sum([float(i["unRealizedProfit"]) for i in positions])
-
-    def margin_distribution(self):
-        pass
 
 
 def update_metrics(ba: BAccount, prices):
@@ -144,18 +153,26 @@ def update_metrics(ba: BAccount, prices):
     metrics.margin_status.labels(name, "maint").set(
         ba.portfolio_maint_margin(portfolio_account)
     )
+    account_balances = ba.client.margin_v1_get_portfolio_balance()
+    # 总债务
     metrics.margin_status.labels(name, "debt").set(
-        ba.portfolio_um_account_debt(portfolio_um_account, prices)
+        ba.portfolio_account_debt(account_balances, prices)
+    )
+    # 有息负债
+    metrics.margin_status.labels(name, "borrowed").set(
+        ba.portfolio_borrowed(account_balances, prices)
     )
     metrics.push()
 
 
-def update_db(positions, spot_acc, margin_distribution, prices):
+def update_db(positions, spot_acc, margin_distribution, prices, orders):
     # 更新订单和持仓
     with db.db.atomic():
         db.Position.delete().execute()
         db.Spot.delete().execute()
         db.Margin.delete().execute()
+        db.Order.delete().execute()
+
         for position in positions:
             amt = float(position["positionAmt"])
             side = "long" if amt > 0 else "short"
@@ -195,6 +212,40 @@ def update_db(positions, spot_acc, margin_distribution, prices):
                 collateral_value=0,
             ).save()
 
+        now = time.time() * 1000
+        agg_orders = {}
+        for o in orders:
+            print("order", o)
+            if o["time"] < now - 1000 * 60 * 60 * 24:
+                continue
+            if o["status"] == "FILLED" or o["status"] == "PARTIALLY_FILLED":
+                print("valid order", o)
+                price = float(o["avgPrice"])
+                qty = (
+                    float(o["executedQty"])
+                    if o["side"] == "BUY"
+                    else -float(o["executedQty"])
+                )
+                value = price * qty
+                symbol = o["symbol"]
+                if symbol not in agg_orders:
+                    agg_orders[symbol] = {
+                        "symbol": symbol,
+                        "amount": 0,
+                        "value": 0,
+                    }
+                agg_orders[symbol]["amount"] += qty
+                agg_orders[symbol]["value"] += value
+
+        for o in agg_orders.values():
+            db.Order(
+                symbol=o["symbol"],
+                direction="long" if o["amount"] > 0 else "short",
+                amount=abs(o["amount"]),
+                price=abs(o["value"] / o["amount"]),
+                value=abs(o["value"]),
+            ).save()
+
 
 def main():
     while True:
@@ -204,7 +255,8 @@ def main():
         positions = ba.positions()
         spot_account = ba.get_spot_account()
         margin_distribution = ba.client.margin_v1_get_portfolio_balance()
-        update_db(positions, spot_account, margin_distribution, prices)
+        orders = ba.client.papi_get_um_all_orders()
+        update_db(positions, spot_account, margin_distribution, prices, orders)
         time.sleep(30)
 
 

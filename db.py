@@ -3,9 +3,15 @@ from peewee import *
 from config import conf
 
 
-db_conf = conf['db']
+db_conf = conf["db"]
 
-db = MySQLDatabase(database=db_conf['database'], host=db_conf['host'], user=db_conf['user'], password=db_conf['password'])
+db = MySQLDatabase(
+    database=db_conf["database"],
+    host=db_conf["host"],
+    user=db_conf["user"],
+    password=db_conf["password"],
+)
+
 
 class Margin(Model):
     token = CharField()
@@ -16,6 +22,7 @@ class Margin(Model):
 
     class Meta:
         database = db
+
 
 class Position(Model):
     symbol = CharField()
@@ -31,6 +38,7 @@ class Position(Model):
     class Meta:
         database = db
 
+
 class Spot(Model):
     token = CharField()
     amount = FloatField()
@@ -41,4 +49,15 @@ class Spot(Model):
         database = db
 
 
-db.create_tables([Position, Margin, Spot])
+class Order(Model):
+    symbol = CharField()
+    direction = CharField()
+    amount = FloatField()
+    price = FloatField()
+    value = FloatField()
+
+    class Meta:
+        database = db
+
+
+db.create_tables([Position, Margin, Spot, Order])
