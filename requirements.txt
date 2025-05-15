@@ -4,3 +4,4 @@ python-binance==1.0.28
 peewee
 pymysql
 jinja2
+prettytable

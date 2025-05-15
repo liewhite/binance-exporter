@@ -51,6 +51,7 @@ class Spot(Model):
 
 class Order(Model):
     symbol = CharField()
+    market = CharField() # spot, future
     direction = CharField()
     amount = FloatField()
     price = FloatField()

@@ -232,10 +232,65 @@ def render_report(account_name):
         else 0
     )
 
+    from prettytable import PrettyTable
+
     margin_distribution = db.Margin.filter()
+    margin_distribution_table = PrettyTable()
+    margin_distribution_table.field_names = [
+        "币种",
+        "数量",
+        "价值",
+        "抵押率",
+        "抵押后价值($)",
+        "负余额阈值",
+        "最大负余额",
+    ]
+    for m in margin_distribution:
+        margin_distribution_table.add_row([m.token, m.amount, m.value, 0, 0, 0, 0])
+
     positions = db.Position.filter()
+    positions_table = PrettyTable()
+    positions_table.field_names = [
+        "合约",
+        "方向",
+        "数量",
+        "价值",
+        "开仓价格",
+        "当前价格",
+        "资金费率",
+        "盈亏$",
+        "盈亏%",
+        "清算价格",
+        "距清算",
+    ]
+    for p in positions:
+        positions_table.add_row(
+            [
+                p.symbol,
+                p.direction,
+                p.amount,
+                p.value,
+                p.entry_price,
+                p.price,
+                0,
+                p.upl,
+                round(p.upl / p.value * 100, 2),
+                p.liq_price,
+                round((p.liq_price - p.price) / p.price * 100, 2),
+            ]
+        )
+
     spot_positions = db.Spot.filter()
+    spot_positions_table = PrettyTable()
+    spot_positions_table.field_names = ["币种", "数量", "价格", "价值"]
+    for p in spot_positions:
+        spot_positions_table.add_row([p.token, p.amount, p.price, p.value])
+
     orders = db.Order.filter()
+    orders_table = PrettyTable()
+    orders_table.field_names = ["合约", "方向", "数量", "均价", "价值"]
+    for o in orders:
+        orders_table.add_row([o.symbol, o.direction, o.amount, o.price, o.value])
 
     vars = {
         "account_name": account_name,
@@ -286,10 +341,10 @@ def render_report(account_name):
         "borrowed_value": borrowed_value,
         "borrowed_value_change": borrowed_value_change,
         "borrowed_value_change_pct": borrowed_value_change_pct,
-        "margin_distribution": margin_distribution,
-        "positions": positions,
-        "spot_positions": spot_positions,
-        "orders": orders,
+        "margin_distribution": margin_distribution_table,
+        "positions": positions_table,
+        "spot_positions": spot_positions_table,
+        "orders_table": orders_table,
     }
     return template.render(vars)
 

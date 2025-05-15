@@ -48,39 +48,21 @@
 | 有息负债 | ${{ borrowed_value }} | {{ borrowed_value_change }}({{ borrowed_value_change_pct }}%) |
 
 ### 保证金分布
-
-| 币种 | 数量 | 价值($) | 抵押率 | 抵押后价值($) | 负余额阈值 | 最大负余额 |
-|:-----|:----:|:-------:|:------:|:-------------:|:----------:|:----------:|
-{% for margin in margin_distribution %}
-| {{ margin.token }} | {{ margin.amount }} | ${{ margin.value }} | {{ margin.collateral_ratio }}% | ${{ margin.collateral_value }} | ${{ margin.negative_balance_threshold }} | ${{ margin.max_negative_balance }} |
-{% endfor %}
+{{ margin_distribution }}
 
 ---
 
 ## ⚖️ 合约持仓明细
-
-| 币对 | 方向 | 数量 | 价值($) | 开仓价格 | 当前价格 | 资金费率 | 盈亏($) | 盈亏(%) | 清算价格 | 距清算 | 风险等级 |
-|:-----|:----:|:----:|:-------:|:--------:|:--------:|:--------:|:-------:|:-------:|:--------:|:------:|:--------:|
-{% for pos in positions %}
-| {{ pos.symbol }} | {{ pos.direction }} | {{ pos.amount }} | ${{ pos.value }} | ${{ pos.entry_price }} | ${{ pos.price }} | {{ pos.funding_rate }}% | ${{ pos.upl }} | {{ (pos.upl / pos.value * 100) | round(2) }}% | ${{ pos.liq_price }} | {{ ((pos.liq_price - pos.price) / pos.price * 100) | round(2) }}% | {{ pos.risk_level }} |
-{% endfor %}
+{{ positions }}
 
 > ⚠️ **注意**: 持仓按风险等级从高到低排序，风险等级基于距清算价格的百分比
 
 ## 💹 现货账户持仓
+{{ spot_positions }}
 
-| 币种 | 数量 | 价格($) | 价值($) | 24h变化(%) |
-|:-----|:----:|:-------:|:-------:|:-----------:|
-{% for spot in spot_positions %}
-| {{ spot.token }} | {{ spot.amount }} | ${{ spot.price }} | ${{ spot.value }} | {{ spot.change_pct }}% |
-{% endfor %}
 
 ## 🔍 当日交易执行
-| Symbol | 方向 | 数量 | 价格($) | 价值($) |
-|:-----|:----:|:-------:|:-------:|:-----------:|
-{% for order in orders %}
-| {{ order.symbol }} | {{ order.direction }} | {{ order.amount }} | ${{ order.price }} | ${{ order.value }} |
-{% endfor %}
+{{ orders_table }}
 
 ---
 

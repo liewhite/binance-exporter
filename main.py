@@ -165,7 +165,7 @@ def update_metrics(ba: BAccount, prices):
     metrics.push()
 
 
-def update_db(positions, spot_acc, margin_distribution, prices, orders):
+def update_db(positions, spot_acc, margin_distribution, prices, orders, spot_orders):
     # 更新订单和持仓
     with db.db.atomic():
         db.Position.delete().execute()
@@ -213,44 +213,113 @@ def update_db(positions, spot_acc, margin_distribution, prices, orders):
             ).save()
 
         now = time.time() * 1000
-        agg_orders = {}
+        long_orders = {}
+        short_orders = {}
         for o in orders:
             if o["time"] < now - 1000 * 60 * 60 * 24:
                 continue
             if o["status"] == "FILLED" or o["status"] == "PARTIALLY_FILLED":
+                symbol = o["symbol"]
                 price = float(o["avgPrice"])
                 qty = float(o["executedQty"])
-                db.Order(
-                    symbol=o["symbol"],
-                    direction=o["side"],
-                    amount=abs(qty),
-                    price=price,
-                    value=abs(qty) * price,
-                ).save()
-        #         qty = (
-        #             float(o["executedQty"])
-        #             if o["side"] == "BUY"
-        #             else -float(o["executedQty"])
-        #         )
-        #         value = price * qty
-        #         symbol = o["symbol"]
-        #         if symbol not in agg_orders:
-        #             agg_orders[symbol] = {
-        #                 "symbol": symbol,
-        #                 "amount": 0,
-        #                 "value": 0,
-        #             }
-        #         agg_orders[symbol]["amount"] += qty
-        #         agg_orders[symbol]["value"] += value
 
-        # for o in agg_orders.values():
-        #     db.Order(
-        #         symbol=o["symbol"],
-        #         direction="long" if o["amount"] > 0 else "short",
-        #         amount=abs(o["amount"]),
-        #         price=abs(o["value"] / o["amount"]),
-        #         value=abs(o["value"]),
-        #     ).save()
+                if o["side"] == "BUY":
+                    if symbol not in long_orders:
+                        long_orders[symbol] = {
+                            "symbol": symbol,
+                            "amount": 0,
+                            "value": 0,
+                        }
+                    long_orders[symbol]["amount"] += qty
+                    long_orders[symbol]["value"] += qty * price
+                else:
+                    if symbol not in short_orders:
+                        short_orders[symbol] = {
+                            "symbol": symbol,
+                            "amount": 0,
+                            "value": 0,
+                        }
+                    short_orders[symbol]["amount"] += qty
+                    short_orders[symbol]["value"] += qty * price
+
+        for k, v in long_orders.items():
+            v["price"] = v["value"] / v["amount"]
+        for k, v in short_orders.items():
+            v["price"] = v["value"] / v["amount"]
+
+        for o in long_orders.values():
+            db.Order(
+                symbol=o["symbol"],
+                market="future",
+                direction="long",
+                amount=abs(o["amount"]),
+                price=o["price"],
+                value=abs(o["value"]),
+            ).save()
+
+        for o in short_orders.values():
+            db.Order(
+                symbol=o["symbol"],
+                market="future",
+                direction="short",
+                amount=abs(o["amount"]),
+                price=o["price"],
+                value=abs(o["value"]),
+            ).save()
+
+        long_orders = {}
+        short_orders = {}
+        for o in spot_orders:
+            if o["time"] < now - 1000 * 60 * 60 * 24:
+                continue
+            if o["status"] == "FILLED" or o["status"] == "PARTIALLY_FILLED":
+                symbol = o["symbol"]
+                price = float(o["avgPrice"])
+                qty = float(o["executedQty"])
+
+                if o["side"] == "BUY":
+                    if symbol not in long_orders:
+                        long_orders[symbol] = {
+                            "symbol": symbol,
+                            "amount": 0,
+                            "value": 0,
+                        }
+                    long_orders[symbol]["amount"] += qty
+                    long_orders[symbol]["value"] += qty * price
+                else:
+                    if symbol not in short_orders:
+                        short_orders[symbol] = {
+                            "symbol": symbol,
+                            "amount": 0,
+                            "value": 0,
+                        }
+                    short_orders[symbol]["amount"] += qty
+                    short_orders[symbol]["value"] += qty * price
+
+        for k, v in long_orders.items():
+            v["price"] = v["value"] / v["amount"]
+        for k, v in short_orders.items():
+            v["price"] = v["value"] / v["amount"]
+
+        for o in long_orders.values():
+            db.Order(
+                symbol=o["symbol"],
+                market="spot",
+                direction="buy",
+                amount=abs(o["amount"]),
+                price=o["price"],
+                value=abs(o["value"]),
+            ).save()
+
+        for o in short_orders.values():
+            db.Order(
+                symbol=o["symbol"],
+                market="spot",
+                direction="sell",
+                amount=abs(o["amount"]),
+                price=o["price"],
+                value=abs(o["value"]),
+            ).save()
 
 
 def main():
@@ -262,7 +331,12 @@ def main():
         spot_account = ba.get_spot_account()
         margin_distribution = ba.client.margin_v1_get_portfolio_balance()
         orders = ba.client.papi_get_um_all_orders()
-        update_db(positions, spot_account, margin_distribution, prices, orders)
+        # 必须传入symbol， 有点费劲
+        # spot_orders = ba.client.get_all_orders()
+        spot_orders = []
+        update_db(
+            positions, spot_account, margin_distribution, prices, orders, spot_orders
+        )
         time.sleep(30)
 
 
