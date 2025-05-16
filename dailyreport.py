@@ -285,6 +285,8 @@ def render_report(account_name):
     spot_positions_table = PrettyTable()
     spot_positions_table.field_names = ["币种", "数量", "价格", "价值"]
     for p in spot_positions:
+        if p.value < 100:
+            continue
         spot_positions_table.add_row([p.token, p.amount, p.price, p.value])
 
     orders = db.Order.filter()
