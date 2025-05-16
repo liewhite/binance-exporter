@@ -59,6 +59,9 @@ def render_report(account_name):
     leverage = round2(
         prom.custom_query(f'cex_leverage{{account="{account_name}"}}')[0]["value"][1]
     )
+    # 立即推送并
+    if leverage > 1.5:
+        pass
     leverage_change = round2(
         prom.custom_query(f'delta(cex_leverage{{account="{account_name}"}}[1d])')[0][
             "value"
@@ -236,6 +239,8 @@ def render_report(account_name):
     from prettytable import PrettyTable
 
     margin_distribution = db.Margin.filter()
+    margin_distribution = sorted(margin_distribution, key=lambda x: x.value, reverse=True)
+
     margin_distribution_table = PrettyTable()
     margin_distribution_table.field_names = [
         "币种",
@@ -250,6 +255,7 @@ def render_report(account_name):
         margin_distribution_table.add_row([m.token, m.amount, m.value, 0, 0, 0, 0])
 
     positions = db.Position.filter()
+    positions = sorted(positions, key=lambda x: x.value, reverse=True)
     positions_table = PrettyTable()
     positions_table.field_names = [
         "合约",
@@ -282,6 +288,8 @@ def render_report(account_name):
         )
 
     spot_positions = db.Spot.filter()
+    # 按value排序
+    spot_positions = sorted(spot_positions, key=lambda x: x.value, reverse=True)
     spot_positions_table = PrettyTable()
     spot_positions_table.field_names = ["币种", "数量", "价格", "价值"]
     for p in spot_positions:
