@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import sys
 from prometheus_api_client import PrometheusConnect
 import requests
 from config import conf
@@ -350,4 +351,4 @@ def render_report(account_name):
 
 
 if __name__ == "__main__":
-    send_notify(render_report("jlp"))
+    send_notify(render_report(sys.argv[1]))
