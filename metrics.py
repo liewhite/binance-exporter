@@ -64,10 +64,10 @@ margin_distribution = Gauge(
     registry=registry,
 )
 
-def push():
+def push(name):
     push_to_gateway(
         conf['pushgateway'],
-        job=f"cextest",
+        job=f"cextest-{name}",
         registry=registry,
     )
 

@@ -162,7 +162,7 @@ def update_metrics(ba: BAccount, prices):
     metrics.margin_status.labels(name, "borrowed").set(
         ba.portfolio_borrowed(account_balances, prices)
     )
-    metrics.push()
+    metrics.push(name)
 
 
 def update_db(positions, spot_acc, margin_distribution, prices, orders, spot_orders):
