@@ -240,10 +240,13 @@ def render_report(account_name):
     )
 
     # 七日资费
-    job_name = conf["exported_job"]
-    jlp_7d_funding_query = f'jlp_7d_funding{{exported_job="{job_name}"}} * jlp_total_value{{exported_job="{job_name}"}} * 7 / 365'
-    jlp_7d_funding_result = prom.custom_query(jlp_7d_funding_query)
-    jlp_7d_funding = round2(jlp_7d_funding_result[0]["value"][1]) if jlp_7d_funding_result else 0
+    if 'exported_job' in conf:
+        job_name = conf["exported_job"]
+        jlp_7d_funding_query = f'jlp_7d_funding{{exported_job="{job_name}"}} * jlp_total_value{{exported_job="{job_name}"}} * 7 / 365'
+        jlp_7d_funding_result = prom.custom_query(jlp_7d_funding_query)
+        jlp_7d_funding = round2(jlp_7d_funding_result[0]["value"][1]) if jlp_7d_funding_result else 0
+    else:
+        jlp_7d_funding = 0
 
     from prettytable import PrettyTable
 
