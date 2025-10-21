@@ -46,6 +46,7 @@
 | 维持保证金 | ${{ maint_margin }} | {{ maint_margin_change }}({{ maint_margin_change_pct }}%) |
 | 总负债 | ${{ debt_value }} | {{ debt_value_change }}({{ debt_value_change_pct }}%) |
 | 有息负债 | ${{ borrowed_value }} | {{ borrowed_value_change }}({{ borrowed_value_change_pct }}%) |
+| 七日资费 | ${{ jlp_7d_funding }} | - |
 
 ### 保证金分布
 {{ margin_distribution }}

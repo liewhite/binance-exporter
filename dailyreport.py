@@ -55,10 +55,6 @@ def render_report(account_name):
     time = datetime.now().strftime("%H:%M:%S")
     template = Template(open("template.txt").read())
 
-    ba = BAccount(conf["ak"], conf["sk"], conf["name"])
-    funding = ba.client.papi_get_um_income_history(incomeType="FUNDING_FEE", limit=1000)
-
-
     tv = total_value(account_name)
     tvc = total_value_change(account_name)
     tvcp = round2(tvc / tv * 100)
@@ -243,6 +239,12 @@ def render_report(account_name):
         else 0
     )
 
+    # 七日资费
+    job_name = conf["exported_job"]
+    jlp_7d_funding_query = f'jlp_7d_funding{{exported_job="{job_name}"}} * jlp_total_value{{exported_job="{job_name}"}} * 7 / 365'
+    jlp_7d_funding_result = prom.custom_query(jlp_7d_funding_query)
+    jlp_7d_funding = round2(jlp_7d_funding_result[0]["value"][1]) if jlp_7d_funding_result else 0
+
     from prettytable import PrettyTable
 
     margin_distribution = db.Margin.filter()
@@ -359,6 +361,7 @@ def render_report(account_name):
         "borrowed_value": borrowed_value,
         "borrowed_value_change": borrowed_value_change,
         "borrowed_value_change_pct": borrowed_value_change_pct,
+        "jlp_7d_funding": jlp_7d_funding,
         "margin_distribution": margin_distribution_table,
         "positions": positions_table,
         "spot_positions": spot_positions_table,
