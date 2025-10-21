@@ -5,6 +5,7 @@ from prometheus_api_client import PrometheusConnect
 import requests
 from config import conf
 import db
+from main import BAccount
 
 prom = PrometheusConnect(url=conf["prometheus"])
 
@@ -45,12 +46,18 @@ def total_value_change(account_name):
 
 
 def render_report(account_name):
+
     from jinja2 import Template
 
     prom = PrometheusConnect(url=conf["prometheus"])
+
     date = datetime.now().strftime("%Y-%m-%d")
     time = datetime.now().strftime("%H:%M:%S")
     template = Template(open("template.txt").read())
+
+    ba = BAccount(conf["ak"], conf["sk"], conf["name"])
+    funding = ba.client.papi_get_um_income_history(incomeType="FUNDING_FEE", limit=1000)
+
 
     tv = total_value(account_name)
     tvc = total_value_change(account_name)
