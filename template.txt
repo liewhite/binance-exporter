@@ -4,14 +4,7 @@
 
 ## 📊 账户状态摘要
 
-| 指标 | 当前值 | 24h变化 | 状态 |
-|:-----|:------:|:-------:|:----:|
-| 账户总价值 | ${{ total_value }} | {{ total_value_change }}({{ total_value_change_pct | round(2) }}%) | {{ total_value_status }} |
-| 当前杠杆率 | {{ leverage }}x | {{ leverage_change }} | {{ leverage_status }} |
-| UniMMR | {{ unimmr }} | {{ unimmr_change }} | {{ unimmr_status }} |
-| 未实现盈亏 | ${{ upl }} | {{ upl_change }}({{ upl_change_pct | round(2) }}%) | {{ unrealized_pnl_status }} |
-
-> ⚠️ **风险提示**: {{ risk_alert }}
+{{ account_status_table }}
 
 ---
 
@@ -19,19 +12,12 @@
 
 ### 账户资产分布
 
-| 账户类型 | 资产价值 | 占比 | 24h变化 |
-|:---------|:--------:|:----:|:-------:|
-| 现货账户 | ${{ spot_value }} | {{ spot_ratio }}% | {{ spot_value_change }}({{ spot_value_change_pct }}%) |
-| 统一账户权益 | ${{ portfolio_value }} | {{ portfolio_ratio }}% | {{ portfolio_value_change }}({{ portfolio_value_change_pct }}%) |
+{{ asset_distribution_table }}
 #### 占比 = xx / 账户总价值
 
 ### 持仓方向分析
 
-| 方向 | 持仓价值 | 占比 | 24h变化 |
-|:-----|:--------:|:----:|:-------:|
-| 多头总价值 | ${{ long_value }} | {{ long_ratio }}% | {{ long_change }}({{ long_change_pct }}%) |
-| 空头总价值 | ${{ short_value }} | {{ short_ratio }}% | {{ short_change }}({{ short_change_pct }}%) |
-| 净持仓 | ${{ net_value }} | {{ net_ratio }}% | {{ net_change }}({{ net_change_pct }}%) |
+{{ position_direction_table }}
 #### 占比 = OI / 统一账户权益
 ---
 
@@ -39,14 +25,7 @@
 
 ### 保证金状况
 
-| 指标 | 当前值 | 24h变化 |
-|:-----|:------:|:-------:|
-| 可用保证金 | ${{ available_margin }} | {{ available_margin_change }}({{ available_margin_change_pct }}%) |
-| 调整后权益 | ${{ adjusted_margin }} | {{ adjusted_margin_change }}({{ adjusted_margin_change_pct }}%) |
-| 维持保证金 | ${{ maint_margin }} | {{ maint_margin_change }}({{ maint_margin_change_pct }}%) |
-| 总负债 | ${{ debt_value }} | {{ debt_value_change }}({{ debt_value_change_pct }}%) |
-| 有息负债 | ${{ borrowed_value }} | {{ borrowed_value_change }}({{ borrowed_value_change_pct }}%) |
-| 七日资费 | ${{ jlp_7d_funding }} | - |
+{{ margin_status_table }}
 
 ### 保证金分布
 {{ margin_distribution }}
@@ -75,10 +54,4 @@
 
 ## 风险评估
 
-| 风险等级 | 说明 | 建议操作 |
-|---------|-----|---------|
-| 🟢 低风险 | >清算线100%以上 | 正常监控 |
-| 🟡 中等风险 | 清算线（30%-60%） | 准备额外保证金 |
-| 🔴 高风险 | 清算线（<30%） | 立即追加保证金或减仓 |
-
-**当前风险评级：** {{ risk_rating }}
+{{ risk_assessment_table }}

@@ -254,6 +254,61 @@ def render_report(account_name):
 
     from prettytable import PrettyTable
 
+    # 账户状态摘要表格
+    account_status_table = PrettyTable()
+    account_status_table.field_names = ["指标", "当前值", "24h变化"]
+    account_status_table.align["指标"] = "l"
+    account_status_table.align["当前值"] = "r"
+    account_status_table.align["24h变化"] = "r"
+    account_status_table.add_row(["账户总价值", f"${tv}", f"{tvc}({tvcp}%)"])
+    account_status_table.add_row(["当前杠杆率", f"{leverage}x", f"{leverage_change}"])
+    account_status_table.add_row(["UniMMR", f"{unimmr}", f"{unimmr_change}"])
+    account_status_table.add_row(["未实现盈亏", f"${upl}", f"{upl_change}({upl_change_pct}%)"])
+
+    # 账户资产分布表格
+    asset_distribution_table = PrettyTable()
+    asset_distribution_table.field_names = ["账户类型", "资产价值", "占比", "24h变化"]
+    asset_distribution_table.align["账户类型"] = "l"
+    asset_distribution_table.align["资产价值"] = "r"
+    asset_distribution_table.align["占比"] = "r"
+    asset_distribution_table.align["24h变化"] = "r"
+    asset_distribution_table.add_row(["现货账户", f"${spot_value}", f"{spot_ratio}%", f"{spot_value_change}({spot_value_change_pct}%)"])
+    asset_distribution_table.add_row(["统一账户权益", f"${portfolio_value}", f"{portfolio_ratio}%", f"{portfolio_value_change}({portfolio_value_change_pct}%)"])
+
+    # 持仓方向分析表格
+    position_direction_table = PrettyTable()
+    position_direction_table.field_names = ["方向", "持仓价值", "占比", "24h变化"]
+    position_direction_table.align["方向"] = "l"
+    position_direction_table.align["持仓价值"] = "r"
+    position_direction_table.align["占比"] = "r"
+    position_direction_table.align["24h变化"] = "r"
+    position_direction_table.add_row(["多头总价值", f"${long_value}", f"{long_ratio}%", f"{long_value_change}({long_value_change_pct}%)"])
+    position_direction_table.add_row(["空头总价值", f"${short_value}", f"{short_ratio}%", f"{short_value_change}({short_value_change_pct}%)"])
+    position_direction_table.add_row(["净持仓", f"${net_value}", f"{net_ratio}%", f"{net_value_change}({net_value_change_pct}%)"])
+
+    # 保证金状况表格
+    margin_status_table = PrettyTable()
+    margin_status_table.field_names = ["指标", "当前值", "24h变化"]
+    margin_status_table.align["指标"] = "l"
+    margin_status_table.align["当前值"] = "r"
+    margin_status_table.align["24h变化"] = "r"
+    margin_status_table.add_row(["可用保证金", f"${available_margin}", f"{available_margin_change}({available_margin_change_pct}%)"])
+    margin_status_table.add_row(["调整后权益", f"${adjusted_margin}", f"{adjusted_margin_change}({adjusted_margin_change_pct}%)"])
+    margin_status_table.add_row(["维持保证金", f"${maint_margin}", f"{maint_margin_change}({maint_margin_change_pct}%)"])
+    margin_status_table.add_row(["总负债", f"${debt_value}", f"{debt_value_change}({debt_value_change_pct}%)"])
+    margin_status_table.add_row(["有息负债", f"${borrowed_value}", f"{borrowed_value_change}({borrowed_value_change_pct}%)"])
+    margin_status_table.add_row(["七日资费", f"${jlp_7d_funding}", "-"])
+
+    # 风险评估表格
+    risk_assessment_table = PrettyTable()
+    risk_assessment_table.field_names = ["风险等级", "说明", "建议操作"]
+    risk_assessment_table.align["风险等级"] = "l"
+    risk_assessment_table.align["说明"] = "l"
+    risk_assessment_table.align["建议操作"] = "l"
+    risk_assessment_table.add_row(["🟢 低风险", ">清算线100%以上", "正常监控"])
+    risk_assessment_table.add_row(["🟡 中等风险", "清算线(30%-60%)", "准备额外保证金"])
+    risk_assessment_table.add_row(["🔴 高风险", "清算线(<30%)", "立即追加保证金或减仓"])
+
     margin_distribution = db.Margin.filter()
     margin_distribution = sorted(margin_distribution, key=lambda x: x.value, reverse=True)
 
@@ -369,6 +424,11 @@ def render_report(account_name):
         "borrowed_value_change": borrowed_value_change,
         "borrowed_value_change_pct": borrowed_value_change_pct,
         "jlp_7d_funding": jlp_7d_funding,
+        "account_status_table": account_status_table,
+        "asset_distribution_table": asset_distribution_table,
+        "position_direction_table": position_direction_table,
+        "margin_status_table": margin_status_table,
+        "risk_assessment_table": risk_assessment_table,
         "margin_distribution": margin_distribution_table,
         "positions": positions_table,
         "spot_positions": spot_positions_table,
