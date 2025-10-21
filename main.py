@@ -162,6 +162,18 @@ def update_metrics(ba: BAccount, prices):
     metrics.margin_status.labels(name, "borrowed").set(
         ba.portfolio_borrowed(account_balances, prices)
     )
+    # ADL
+    ts = (int(time.time()) - 3600 * 24) * 1000
+    adls = ba.client.papi_get_um_force_orders(autoCloseType='ADL',start_time=ts)
+    totals = {}
+    for i in adls:
+        symbol = i["symbol"]
+        if symbol not in totals:
+            totals[symbol] = 0
+        totals[symbol] += float(i["executedQty"])
+    for symbol, i in totals.items():
+        metrics.margin_adl.labels(name, symbol).set(i)
+
     metrics.push(name)
 
 
@@ -341,7 +353,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # ba = BAccount(conf["ak"], conf["sk"], conf["name"])
     # print(ba.client.get_cross_margin_collateral_ratio())
     # print(ba.client.margin_v1_get_portfolio_balance())
     main()

@@ -64,6 +64,14 @@ margin_distribution = Gauge(
     registry=registry,
 )
 
+### ADL数量
+margin_adl = Gauge(
+    "cex_adl",
+    "Status of the account adl",
+    labelnames=["account","symbol"], # name: debt,maint,available,adjusted_eq
+    registry=registry,
+)
+
 def push(name):
     push_to_gateway(
         conf['pushgateway'],
