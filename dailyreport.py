@@ -12,6 +12,9 @@ prom = PrometheusConnect(url=conf["prometheus"])
 
 def send_notify(text, channel=conf["slack_channel"]):
     try:
+        # 使用代码块包裹整个消息以保持等宽对齐
+        formatted_text = f"```\n{text}\n```"
+
         slack_result = requests.post(
             "https://slack.com/api/chat.postMessage",
             timeout=10,
@@ -21,7 +24,8 @@ def send_notify(text, channel=conf["slack_channel"]):
             },
             json={
                 "channel": channel,
-                "text": text,
+                "text": formatted_text,
+                "mrkdwn": True,
             },
         )
         logging.info(f"slack result: {slack_result.status_code}, {slack_result.text}")
